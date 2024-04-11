@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:minha_lista/class/lista_compras.dart';
-import 'package:minha_lista/class/produto.dart';
+import 'package:minha_lista/models/lista_compras.dart';
+import 'package:minha_lista/models/produto.dart';
 
-class ListaPreco extends StatefulWidget {
-  const ListaPreco({super.key});
+class ListaCompras extends StatefulWidget {
+  const ListaCompras({super.key});
 
   @override
-  State<ListaPreco> createState() => _ListaPrecoState();
+  State<ListaCompras> createState() => _ListaComprasState();
 }
 
-class _ListaPrecoState extends State<ListaPreco> {
+class _ListaComprasState extends State<ListaCompras> {
 
   final GlobalKey<FormState> formChave = GlobalKey<FormState>();
   late String nome;
   late double preco;
   late int quant;
-  Lista lista = Lista();
+  String tipo = 'preco';
+  ListaDeCompras lista = ListaDeCompras(nome: '', data: '', tipo: '');
   List <Produto> item = [];
 
   @override
@@ -23,12 +24,15 @@ class _ListaPrecoState extends State<ListaPreco> {
     return Scaffold(
         appBar: AppBar(
           title: const Text("Minha Lista"),
-        leading: IconButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.arrow_back)),
           backgroundColor: Colors.deepOrange[300],
+          actions: <Widget>[
+          IconButton(onPressed: (){
+            const snackBar = SnackBar(
+                content: Text('Dados salvos com sucesso!'),
+              );
+              ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          }, icon: const Icon(Icons.save))
+        ]
         ),
         body:
             Form(
@@ -89,7 +93,7 @@ class _ListaPrecoState extends State<ListaPreco> {
                       onPressed: () {
                         if (formChave.currentState!.validate()) {
                           formChave.currentState!.save();
-                          Produto p = Produto(nome, preco, quant);
+                          Produto p = Produto(nome: nome, preco: preco, quant: quant);
                           p.calcularTotal();
 
                           setState(() {

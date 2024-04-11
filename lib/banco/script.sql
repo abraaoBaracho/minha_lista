@@ -1,0 +1,19 @@
+CREATE TABLE Usuario 
+( 
+ Id INT PRIMARY KEY AUTO_INCREMENT,  
+ User VARCHAR(9) NOT NULL,  
+ Email VARCHAR(25) NOT NULL,  
+ Senha VARCHAR(10) NOT NULL,  
+ UNIQUE (Email)
+); 
+
+CREATE TABLE Lista 
+( 
+ Id INT PRIMARY KEY AUTO_INCREMENT,  
+ Nome VARCHAR(n) NOT NULL,  
+ Produto VARCHAR(n) NOT NULL,  
+ Data DATE NOT NULL,  
+ idUsuario INT,  
+); 
+
+ALTER TABLE Lista ADD FOREIGN KEY(idUsuario) REFERENCES Usuario (idUsuario)

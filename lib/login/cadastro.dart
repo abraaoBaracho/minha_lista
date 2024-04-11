@@ -91,8 +91,9 @@ class _CadastrarState extends State<Cadastrar> {
               },
             ),
             Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                padding: const EdgeInsets.symmetric(vertical: 7.0),
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, ),
                   onPressed: () {
                     if (formChave.currentState!.validate()) {
                       formChave.currentState!.save();

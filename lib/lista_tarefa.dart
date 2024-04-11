@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:minha_lista/models/tarefas.dart';
 
-class ListaN extends StatefulWidget {
-  const ListaN({super.key});
+class ListaTarefa extends StatefulWidget {
+  const ListaTarefa({super.key});
 
   @override
-  State<ListaN> createState() => _ListaNState();
+  State<ListaTarefa> createState() => _ListaTarefaState();
 }
 
-class _ListaNState extends State<ListaN> {
+class _ListaTarefaState extends State<ListaTarefa> {
   bool textoInput = true;
   bool addItens = false;
-  late String nome;
-  List<String> lista = ["Feijao", "Arroz", "Macarrão", "Fubá"];
+  late String tarefa;
+  Tarefas listaDeTarefas = Tarefas(nome: '01', data: '11/04/2024');
   List<String> selecionada = [];
   final GlobalKey<FormState> formChave = GlobalKey<FormState>();
 
@@ -19,14 +20,19 @@ class _ListaNState extends State<ListaN> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-         title: const Text("Minha Lista"),
-        leading: IconButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.arrow_back)),
-        backgroundColor: Colors.deepOrange[300],
-      ),
+          title: const Text("Minha Lista"),
+          backgroundColor: Colors.deepOrange[300],
+          actions: <Widget>[
+            IconButton(
+                onPressed: () {
+                  const snackBar = SnackBar(
+                    content: Text('Dados salvos com sucesso!'),
+                    duration: Durations.long4,
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                },
+                icon: const Icon(Icons.save))
+          ]),
       body: Form(
         key: formChave,
         child: Column(
@@ -45,7 +51,7 @@ class _ListaNState extends State<ListaN> {
                     return null;
                   },
                   onSaved: (value) {
-                    nome = value!;
+                    tarefa = value!;
                   },
                 ),
               ),
@@ -58,9 +64,9 @@ class _ListaNState extends State<ListaN> {
                         if (formChave.currentState!.validate()) {
                           formChave.currentState!.save();
                           setState(() {
-                            lista.add(nome);
+                            listaDeTarefas.addTarefa(tarefa);
                           });
-              
+
                           formChave.currentState!.reset();
                           textoInput = false;
                           addItens = true;
@@ -72,32 +78,28 @@ class _ListaNState extends State<ListaN> {
               Expanded(
                   child: ListView.separated(
                       itemBuilder: (BuildContext context, int index) {
+                        List<String> lista = listaDeTarefas.tarefas;
                         final linha = lista[index];
-                        var estiloTexto = TextDecoration.none;
-                        if (selecionada.contains(linha)) {
-                          estiloTexto = TextDecoration.lineThrough;
-                        } else {
-                          estiloTexto = TextDecoration.none;
-                        }
+                        var estiloTexto = TextStyle(
+                          decoration: selecionada.contains(linha)
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                          color: Colors.black,
+                        );
 
                         return ListTile(
                           shape: const RoundedRectangleBorder(
                               borderRadius:
                                   BorderRadius.all(Radius.circular(12))),
-                          title: Text(linha,
-                              style: TextStyle(
-                                  decoration: estiloTexto,
-                                  color: Colors.black)),
+                          title: Text(linha, style: estiloTexto),
                           selected: selecionada.contains(linha),
                           selectedTileColor:
                               const Color.fromARGB(255, 10, 236, 59),
                           onTap: () {
                             setState(() {
-                              if (selecionada.contains(linha)) {
-                                selecionada.remove(linha);
-                              } else {
-                                selecionada.add(linha);
-                              }
+                              selecionada.contains(linha)
+                                  ? selecionada.remove(linha)
+                                  : selecionada.add(linha);
                             });
                           },
                           trailing: SizedBox(
@@ -108,10 +110,21 @@ class _ListaNState extends State<ListaN> {
                                     onPressed: () async {
                                       String? textoEditado =
                                           await editarItem(context, linha);
-                                      if (textoEditado != null) {
+
+                                      if (textoEditado != null &&
+                                          textoEditado.isNotEmpty) {
                                         setState(() {
                                           lista[index] = textoEditado;
                                         });
+                                      } else {
+                                        const snackBar = SnackBar(
+                                          content: Text(
+                                              'A tarefa não pode estar vazia'),
+                                              duration: Durations.long4,
+                                        );
+                                        // ignore: use_build_context_synchronously
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
                                       }
                                     },
                                     icon: const Icon(Icons.edit),
@@ -122,6 +135,12 @@ class _ListaNState extends State<ListaN> {
                                     setState(() {
                                       lista.remove(linha);
                                     });
+                                    const snackBar = SnackBar(
+                                      content: Text('A tarefa foi removida'),
+                                      duration: Durations.long4,
+                                    );
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(snackBar);
                                   },
                                   icon: const Icon(Icons.delete),
                                   color: Colors.red,
@@ -133,7 +152,7 @@ class _ListaNState extends State<ListaN> {
                       },
                       padding: const EdgeInsets.all(18),
                       separatorBuilder: (_, __) => const Divider(),
-                      itemCount: lista.length)),
+                      itemCount: listaDeTarefas.tarefas.length)),
             ]),
       ),
       floatingActionButton: Visibility(

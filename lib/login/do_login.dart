@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:minha_lista/models/usuario.dart';
 

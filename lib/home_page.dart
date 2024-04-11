@@ -48,7 +48,7 @@ class HomePage extends StatelessWidget {
                     Icon(Icons.info),
                     Text("Sobre")
                   ],
-                )),
+                )),/*
                  ElevatedButton(
                 onPressed: (){
                   Navigator.of(context).pushNamed(AppRoutes.CADASTRO);
@@ -68,7 +68,7 @@ class HomePage extends StatelessWidget {
                     Icon(Icons.info),
                     Text("login")
                   ],
-                )),
+                )),*/
             ],
           )
         ],
@@ -84,15 +84,15 @@ class HomePage extends StatelessWidget {
           children: <Widget>[
             SimpleDialogOption(
               onPressed: () {
-                Navigator.of(context).popAndPushNamed(AppRoutes.LISTA);
+                Navigator.of(context).popAndPushNamed(AppRoutes.LISTATAREFA);
               },
-              child: const Text('Lista de produtos'),
+              child: const Text('Lista de Tarefa'),
             ),
             SimpleDialogOption(
               onPressed: () {
-                Navigator.of(context).popAndPushNamed(AppRoutes.LISTAPRECO);
+                Navigator.of(context).popAndPushNamed(AppRoutes.LISTACOMPRAS);
               },
-              child: const Text('Lista de produtos com preço'),
+              child: const Text('Lista de Compra'),
             )
       ]);
       }));
