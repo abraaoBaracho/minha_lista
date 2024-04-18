@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:minha_lista/models/tarefas.dart';
+import 'package:minha_lista/models/tarefa.dart';
+import 'models/lista_tarefas.dart';
 
 class ListaTarefa extends StatefulWidget {
   const ListaTarefa({super.key});
@@ -9,10 +10,11 @@ class ListaTarefa extends StatefulWidget {
 }
 
 class _ListaTarefaState extends State<ListaTarefa> {
-  bool textoInput = true;
-  bool addItens = false;
+  bool textoInput = false;
+  bool addItens = true;
   late String tarefa;
-  Tarefas listaDeTarefas = Tarefas(nome: '01', data: '11/04/2024');
+  ListaDeTarefas listaDeTarefas =
+      ListaDeTarefas(nome: '01', data: '11/04/2024');
   List<String> selecionada = [];
   final GlobalKey<FormState> formChave = GlobalKey<FormState>();
 
@@ -23,15 +25,18 @@ class _ListaTarefaState extends State<ListaTarefa> {
           title: const Text("Minha Lista"),
           backgroundColor: Colors.deepOrange[300],
           actions: <Widget>[
-            IconButton(
-                onPressed: () {
-                  const snackBar = SnackBar(
-                    content: Text('Dados salvos com sucesso!'),
-                    duration: Durations.long4,
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                },
-                icon: const Icon(Icons.save))
+            Visibility(
+              visible: listaDeTarefas.tarefas.isNotEmpty,
+                child: IconButton(
+                    onPressed: () {
+                      const snackBar = SnackBar(
+                        content: Text('Dados salvos com sucesso!'),
+                        duration: Durations.long4,
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                    },
+                    tooltip: 'Salvar',
+                    icon: const Icon(Icons.save)))
           ]),
       body: Form(
         key: formChave,
@@ -42,7 +47,7 @@ class _ListaTarefaState extends State<ListaTarefa> {
                 visible: textoInput,
                 child: TextFormField(
                   decoration: const InputDecoration(
-                    labelText: "Digite o nome do produto.",
+                    labelText: "Digite o nome da tarefa.",
                   ),
                   validator: (value) {
                     if (value!.isEmpty) {
@@ -63,8 +68,9 @@ class _ListaTarefaState extends State<ListaTarefa> {
                       onPressed: () {
                         if (formChave.currentState!.validate()) {
                           formChave.currentState!.save();
+                          Tarefa t = Tarefa(tarefa: tarefa);
                           setState(() {
-                            listaDeTarefas.addTarefa(tarefa);
+                            listaDeTarefas.addTarefas(t);
                           });
 
                           formChave.currentState!.reset();
@@ -72,16 +78,28 @@ class _ListaTarefaState extends State<ListaTarefa> {
                           addItens = true;
                         }
                       },
-                      child: const Text("Salvar"),
+                      child: const Text("Adicionar"),
                     ),
                   )),
+              Visibility(
+                visible: listaDeTarefas.tarefas.isNotEmpty,
+                child: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      listaDeTarefas.tarefasSort();
+                    });
+                  },
+                  tooltip: 'Ordenar',
+                  icon: const Icon(Icons.swap_vert),
+                ),
+              ),
               Expanded(
                   child: ListView.separated(
                       itemBuilder: (BuildContext context, int index) {
-                        List<String> lista = listaDeTarefas.tarefas;
+                        List<Tarefa> lista = listaDeTarefas.tarefas;
                         final linha = lista[index];
                         var estiloTexto = TextStyle(
-                          decoration: selecionada.contains(linha)
+                          decoration: selecionada.contains(linha.tarefa)
                               ? TextDecoration.lineThrough
                               : TextDecoration.none,
                           color: Colors.black,
@@ -91,15 +109,15 @@ class _ListaTarefaState extends State<ListaTarefa> {
                           shape: const RoundedRectangleBorder(
                               borderRadius:
                                   BorderRadius.all(Radius.circular(12))),
-                          title: Text(linha, style: estiloTexto),
-                          selected: selecionada.contains(linha),
+                          title: Text(linha.tarefa, style: estiloTexto),
+                          selected: selecionada.contains(linha.tarefa),
                           selectedTileColor:
-                              const Color.fromARGB(255, 10, 236, 59),
+                              const Color.fromARGB(255, 99, 247, 104),
                           onTap: () {
                             setState(() {
-                              selecionada.contains(linha)
-                                  ? selecionada.remove(linha)
-                                  : selecionada.add(linha);
+                              selecionada.contains(linha.tarefa)
+                                  ? selecionada.remove(linha.tarefa)
+                                  : selecionada.add(linha.tarefa);
                             });
                           },
                           trailing: SizedBox(
@@ -108,25 +126,18 @@ class _ListaTarefaState extends State<ListaTarefa> {
                               children: <Widget>[
                                 IconButton(
                                     onPressed: () async {
-                                      String? textoEditado =
-                                          await editarItem(context, linha);
+                                      String? textoEditado = await editarItem(
+                                          context, linha.tarefa);
+                                      if (textoEditado != null) {
+                                        Tarefa t = Tarefa(
+                                            tarefa: textoEditado.toString());
 
-                                      if (textoEditado != null &&
-                                          textoEditado.isNotEmpty) {
                                         setState(() {
-                                          lista[index] = textoEditado;
+                                          lista[index] = t;
                                         });
-                                      } else {
-                                        const snackBar = SnackBar(
-                                          content: Text(
-                                              'A tarefa não pode estar vazia'),
-                                              duration: Durations.long4,
-                                        );
-                                        // ignore: use_build_context_synchronously
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(snackBar);
                                       }
                                     },
+                                    tooltip: 'Editar',
                                     icon: const Icon(Icons.edit),
                                     color: const Color.fromARGB(
                                         255, 187, 174, 56)),
@@ -143,6 +154,7 @@ class _ListaTarefaState extends State<ListaTarefa> {
                                         .showSnackBar(snackBar);
                                   },
                                   icon: const Icon(Icons.delete),
+                                  tooltip: 'Remover',
                                   color: Colors.red,
                                 )
                               ],
@@ -190,7 +202,17 @@ Future<String?> editarItem(BuildContext context, String l) {
             child: const Text('Salvar'),
             onPressed: () {
               String enteredText = texto.text;
-              Navigator.of(context).pop(enteredText);
+              if (enteredText.isNotEmpty) {
+                Navigator.of(context).pop(enteredText);
+              } else {
+                const snackBar = SnackBar(
+                  content: Text('A tarefa não pode estar vazia'),
+                  duration: Durations.long4,
+                );
+                // ignore: use_build_context_synchronously
+                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                Navigator.of(context).pop();
+              }
             },
           ),
           TextButton(

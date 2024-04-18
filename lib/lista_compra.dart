@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:minha_lista/models/lista_compras.dart';
 import 'package:minha_lista/models/produto.dart';
+import 'package:intl/intl.dart';
 
 class ListaCompras extends StatefulWidget {
   const ListaCompras({super.key});
@@ -11,6 +12,7 @@ class ListaCompras extends StatefulWidget {
 
 class _ListaComprasState extends State<ListaCompras> {
 
+  NumberFormat real = NumberFormat.currency(locale: 'pt_br', name: 'R\$');
   final GlobalKey<FormState> formChave = GlobalKey<FormState>();
   late String nome;
   late double preco;
@@ -113,11 +115,11 @@ class _ListaComprasState extends State<ListaCompras> {
                       final linha = item[index];
                       return ListTile(
                         leading: Text(linha.nome),
-                        title: Text(linha.preco.toString()),
+                        title: Text(real.format(linha.preco)),
                         onTap: (){
                           
                         },
-                        trailing: Text(linha.precoTotal.toString()) ,
+                        trailing: Text(real.format(linha.precoTotal)) ,
                       );
                     }, 
                     padding: const EdgeInsets.all(18),
