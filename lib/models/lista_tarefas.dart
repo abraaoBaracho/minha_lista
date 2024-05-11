@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:minha_lista/models/tarefa.dart';
 
 class ListaDeTarefas extends ChangeNotifier{
   
   String nome;
   String data;
-  List<Tarefa> tarefas = [];
+  List<String> tarefas = [];
   bool sort = false;
  
 
   ListaDeTarefas({required this.nome, required this.data});
 
-  void addTarefas(Tarefa tarefa){
+  void addTarefas(String tarefa){
     tarefas.add(tarefa);
     }
 
   void tarefasSort(){
     if (!sort) {
-      tarefas.sort((a, b) => a.tarefa.compareTo(b.tarefa));
+      tarefas.sort((a, b) => a.compareTo(b));
       sort = true;
     } else {
       tarefas = tarefas.reversed.toList();

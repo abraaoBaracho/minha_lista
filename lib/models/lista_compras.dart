@@ -5,12 +5,12 @@ import 'produto.dart';
 class ListaDeCompras {
   String nome;
   String data;
-  String tipo;
   List<Produto> compras = [];
 
-  ListaDeCompras({required this.nome, required this.data, required this.tipo});
+  ListaDeCompras({required this.nome, required this.data});
 
   void addProduto(Produto p) {
+    p.calcularTotal();
     compras.add(p);
   }
 
@@ -22,7 +22,7 @@ class ListaDeCompras {
     return ListaDeCompras(
       nome: map['nome'],
       data: map['data'],
-      tipo: map['tipo']
+      
       
     );
   }

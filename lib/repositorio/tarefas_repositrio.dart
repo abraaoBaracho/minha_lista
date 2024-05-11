@@ -1,10 +1,10 @@
-import '../models/tarefa.dart';
+
 
 class TarefasRepositorio {
   
-  List<Tarefa> tarefas = [];
+  List<String> tarefas = [];
 
-  void setTarefas(List <Tarefa> tarefas){
+  void setTarefas(List <String> tarefas){
     this.tarefas = tarefas;
   }
 
