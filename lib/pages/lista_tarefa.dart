@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:minha_lista/routes/app_routes.dart';
+import 'package:minha_lista/repositorio/lista_tarefas_repositorio.dart';
+import 'package:provider/provider.dart';
 import '../models/lista_tarefas.dart';
 
 class ListaTarefa extends StatefulWidget {
@@ -10,96 +11,50 @@ class ListaTarefa extends StatefulWidget {
 }
 
 class _ListaTarefaState extends State<ListaTarefa> {
-  bool textoInput = false;
-  bool addItens = true;
   late String tarefa;
-   ListaDeTarefas listaDeTarefas = ListaDeTarefas(nome: 'nome', data: 'data');
+  String nomeLista = 'Lista';
+  ListaDeTarefas listaDeTarefas =
+      ListaDeTarefas(nome: '', data:'');
   List<String> selecionada = [];
-  String nomeLista = '';
 
-
-@override
-void initState() {
-  super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Nome da Lista'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Form(
-                  child: Column(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextFormField(
-                          decoration: const InputDecoration(
-                            labelText: 'Nome',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Por favor, insira o nome da lista';
-                            }
-                            return null;
-                          },
-                          onChanged: (value) {
-                            nomeLista = value;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                
-                setState(() {
-                  nomeLista;
-                });
-                Navigator.of(context).pop(nomeLista);
-              },
-              child: const Text('Adicionar'),
-            ),
-            TextButton(
-              onPressed: () {
-                 Navigator.of(context)
-                        .popAndPushNamed(AppRoutes.HOME);
-              },
-              child: const Text('Cancelar'),
-            ),
-          ],
-        );
-      },
-    );
-  });
-}
-  
   @override
   Widget build(BuildContext context) {
-   
+    //final listaTarefaRepositorio = context.watch<ListaRepositorio>();
+
     return Scaffold(
       appBar: AppBar(
-          title:  Text(listaDeTarefas.nome),
+          title: Text(nomeLista),
           backgroundColor: Colors.deepOrange[300],
           actions: <Widget>[
             Visibility(
                 visible: listaDeTarefas.tarefas.isNotEmpty,
                 child: IconButton(
-                    onPressed: () {
-                      listaDeTarefas.nome = addNome(context) as String;
-                      const snackBar = SnackBar(
-                        content: Text('Dados salvos com sucesso!'),
-                        duration: Durations.long4,
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                    onPressed: () async {
+                      nomeLista = (await addNome(context))!;
+                      DateTime data =  DateTime.now();
+
+                      setState(() {
+                        listaDeTarefas.nome = nomeLista;
+                        listaDeTarefas.data = '${data.day}/${data.month}/${data.year}';
+                      });
+
+                      bool salvar = await salvarBanco(listaDeTarefas);
+
+                      if (salvar) {
+                        const snackBar = SnackBar(
+                          content: Text('Dados salvos com sucesso!'),
+                          duration: Durations.long4,
+                        );
+                        // ignore: use_build_context_synchronously
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      } else {
+                        const snackBar = SnackBar(
+                          content: Text('Os dados não foram salvos'),
+                          duration: Durations.long4,
+                        );
+                        // ignore: use_build_context_synchronously
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      }
                     },
                     tooltip: 'Salvar',
                     icon: const Icon(Icons.save)))
@@ -130,7 +85,7 @@ void initState() {
                             : TextDecoration.none,
                         color: Colors.black,
                       );
-      
+
                       return ListTile(
                         shape: const RoundedRectangleBorder(
                             borderRadius:
@@ -162,8 +117,8 @@ void initState() {
                                   },
                                   tooltip: 'Editar',
                                   icon: const Icon(Icons.edit),
-                                  color: const Color.fromARGB(
-                                      255, 187, 174, 56)),
+                                  color:
+                                      const Color.fromARGB(255, 187, 174, 56)),
                               IconButton(
                                 onPressed: () {
                                   setState(() {
@@ -195,7 +150,7 @@ void initState() {
             String? texto = await addItem(context);
             if (texto != null) {
               setState(() {
-                listaDeTarefas.addTarefas(texto);
+                listaDeTarefas.addTarefa(texto);
               });
             }
           },
@@ -203,10 +158,21 @@ void initState() {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
+
+  Future<bool> salvarBanco(ListaDeTarefas lista) async {
+    final listaTarefaRepositorio = context.read<ListaTarefasRepositorio>();
+    int resultado = await listaTarefaRepositorio.addLista(lista);
+
+    if (resultado >= 0) {
+      return true;
+    }
+
+    return false;
+  }
 }
 
 Future<String?> editarItem(BuildContext context, String l) {
-  TextEditingController texto = TextEditingController();
+  TextEditingController texto = TextEditingController(text: l);
 
   return showDialog<String>(
     context: context,
@@ -286,7 +252,6 @@ Future<String?> addItem(BuildContext context) {
           ),
         ],
       );
-      
     },
   );
 }
@@ -301,8 +266,7 @@ Future<String?> addNome(BuildContext context) {
         title: const Text('Digite o nome da Lista'),
         content: TextField(
           controller: texto,
-          decoration:
-              const InputDecoration(hintText: 'Digite o nome da Lista'),
+          decoration: const InputDecoration(hintText: 'Digite o nome da Lista'),
         ),
         actions: <Widget>[
           TextButton(
@@ -328,7 +292,6 @@ Future<String?> addNome(BuildContext context) {
           ),
         ],
       );
-      
     },
   );
 }

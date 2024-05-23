@@ -1,4 +1,5 @@
 class Produto {
+  int id;
   String nome;
   double preco;
   int quant;
@@ -9,6 +10,7 @@ class Produto {
     required this.preco,
     required this.quant,
     this.precoTotal = 0,
+    this.id =0
   });
 
   void calcularTotal() {
@@ -22,6 +24,7 @@ class Produto {
 
   factory Produto.fromMap(Map<String, dynamic> map) {
     return Produto(
+      id: map['id'],
       nome: map['nome'],
       preco: map['preco'],
       quant: map['quant'],

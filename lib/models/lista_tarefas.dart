@@ -1,17 +1,18 @@
-import 'package:flutter/material.dart';
 
-class ListaDeTarefas extends ChangeNotifier{
+class ListaDeTarefas {
   
+  int id;
   String nome;
   String data;
   List<String> tarefas = [];
   bool sort = false;
  
 
-  ListaDeTarefas({required this.nome, required this.data});
+  ListaDeTarefas({required this.nome, required this.data, this.id = 0});
 
-  void addTarefas(String tarefa){
+  void addTarefa(String tarefa){
     tarefas.add(tarefa);
+
     }
 
   void tarefasSort(){
@@ -20,8 +21,20 @@ class ListaDeTarefas extends ChangeNotifier{
       sort = true;
     } else {
       tarefas = tarefas.reversed.toList();
+      sort = false;
     }
-    notifyListeners();
+
   }
+
+  factory ListaDeTarefas.fromMap(Map<String, dynamic> map) {
+    return ListaDeTarefas(
+      id: map['id'],
+      nome: map['nome'],
+      data: map['data'],
+
+    );
+  }
+
+ 
 
 }

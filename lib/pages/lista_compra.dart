@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:minha_lista/models/lista_compras.dart';
 import 'package:minha_lista/models/produto.dart';
 import 'package:intl/intl.dart';
-import 'package:minha_lista/routes/app_routes.dart';
 
 class ListaCompras extends StatefulWidget {
   const ListaCompras({super.key});
@@ -17,73 +16,8 @@ class _ListaComprasState extends State<ListaCompras> {
   late String nome;
   late double preco;
   late int quant;
-  String nomeLista = '';
+  String nomeLista = 'Lista';
   ListaDeCompras lista = ListaDeCompras(nome: '', data: '');
-  List<Produto> item = [];
-
-@override
-void initState() {
-  super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Nome da Lista'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Form(
-                  child: Column(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextFormField(
-                          decoration: const InputDecoration(
-                            labelText: 'Nome',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Por favor, insira o nome da lista';
-                            }
-                            return null;
-                          },
-                          onChanged: (value) {
-                            nomeLista = value;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                
-                setState(() {
-                  nomeLista;
-                });
-                Navigator.of(context).pop(nomeLista);
-              },
-              child: const Text('Adicionar'),
-            ),
-            TextButton(
-              onPressed: () {
-                 Navigator.of(context)
-                        .popAndPushNamed(AppRoutes.HOME);
-              },
-              child: const Text('Cancelar'),
-            ),
-          ],
-        );
-      },
-    );
-  });
-}
 
   @override
   Widget build(BuildContext context) {
@@ -92,37 +26,87 @@ void initState() {
           title: Text(nomeLista),
           backgroundColor: Colors.deepOrange[300],
           actions: <Widget>[
-            IconButton(
-                onPressed: () {
-                  const snackBar = SnackBar(
-                    content: Text('Dados salvos com sucesso!'),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                },
-                icon: const Icon(Icons.save))
+            Visibility(
+              visible: lista.compras.isNotEmpty,
+              child: IconButton(
+                  onPressed: () async {
+                    nomeLista = (await addNome(context))!;
+
+                    setState(() {
+                      lista.nome = nomeLista;
+                    });
+                    //listaRepositorio.addLista(listaDeTarefas.nome, 'data');
+                    const snackBar = SnackBar(
+                      content: Text('Dados salvos com sucesso!'),
+                      duration: Durations.long4,
+                    );
+                    // ignore: use_build_context_synchronously
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                  },
+                  icon: const Icon(Icons.save)),
+            )
           ]),
       body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Center(
-              child: Text(lista.compras.toString()),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: const [
+                  DataColumn(label: Text('Produto')),
+                  DataColumn(label: Text('Preço')),
+                  DataColumn(label: Text('Quantidade')),
+                  DataColumn(label: Text('Preço total')),
+                  DataColumn(label: Text('Contole')),
+                ],
+                rows: lista.compras.map((item) {
+                  return DataRow(cells: [
+                    DataCell(Text(item['nome'].toString())),
+                    DataCell(Text(item['preco'].toString())),
+                    DataCell(Text(item['quantidade'].toString())),
+                    DataCell(Text(item['precoTotal'].toString()),),
+                    DataCell(Row(
+                      children: [
+                        IconButton(
+                            onPressed: () async {
+                              Map<String, dynamic>? itemEditado = await editarItem(context, item);
+                              if (itemEditado != null){
+                                setState(() {
+                                   
+                                  item['nome'] = itemEditado['nome'];
+                                  item['preco']= itemEditado['preco'];
+                                  item['quantidade'] = itemEditado['quantidade'];
+                                  item['precoTotal']= itemEditado['precoTotal'];
+                                
+                                });
+                              }
+                            }, 
+                            icon: const Icon(Icons.edit),
+                            color: const Color.fromARGB(
+                                      255, 187, 174, 56)),
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              lista.compras.remove(item);
+                              
+                              const snackBar = SnackBar(
+                                content: Text('A tarefa foi removida'),
+                                duration: Durations.long4,
+                              );
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(snackBar);
+                            });
+                          },
+                          icon: const Icon(Icons.delete),
+                          color: Colors.red,
+                        )
+                      ],
+                    ))
+                  ]);
+                }).toList(),
+              ),
             ),
-            Expanded(
-                child: ListView.separated(
-                    itemBuilder: (BuildContext context, int index) {
-                      final linha = lista.compras[index];
-                      return ListTile(
-                        leading: Text(linha.nome),
-                        title: Text(real.format(linha.preco)),
-                        onTap: () {},
-                        trailing: Text(real.format(linha.precoTotal)),
-                      );
-                    },
-                    padding: const EdgeInsets.all(18),
-                    separatorBuilder: (_, __) => const Divider(),
-                    itemCount: item.length)
-
-                ),
+            Expanded(child: Text('Valor Total:${lista.precoLista}'))
           ]),
       floatingActionButton: FloatingActionButton(
           tooltip: 'Adicionar Produto',
@@ -134,6 +118,8 @@ void initState() {
                 preco = resultado['preco'];
                 quant = resultado['quantidade'];
                 Produto p = Produto(nome: nome, preco: preco, quant: quant);
+                p.calcularTotal();
+
                 lista.addProduto(p);
               });
             }
@@ -163,7 +149,9 @@ Future<Map<String, dynamic>?> addItem(BuildContext context) {
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Nome do produto',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
                     ),
                     validator: (value) {
                       if (value!.isEmpty) {
@@ -234,4 +222,137 @@ Future<Map<String, dynamic>?> addItem(BuildContext context) {
           ],
         );
       });
+}
+
+Future<String?> addNome(BuildContext context) {
+  TextEditingController texto = TextEditingController();
+
+  return showDialog<String>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Digite o nome da Lista'),
+        content: TextField(
+          controller: texto,
+          decoration: const InputDecoration(hintText: 'Digite o nome da Lista'),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Salvar'),
+            onPressed: () {
+              String enteredText = texto.text;
+              if (enteredText.isNotEmpty) {
+                Navigator.of(context).pop(enteredText);
+              } else {
+                const snackBar = SnackBar(
+                  content: Text('Digite o nome da lista'),
+                  duration: Durations.long4,
+                );
+                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+              }
+            },
+          ),
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<Map<String, dynamic>?> editarItem(BuildContext context, Map<String, dynamic> item) {
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  TextEditingController nomeController = TextEditingController(text: item['nome']);
+  TextEditingController precoController = TextEditingController(text: item['preco'].toString());
+  TextEditingController quantidadeController = TextEditingController(text: item['quantidade'].toString());
+
+  return showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Editar ${item['nome']}'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextFormField(
+                controller: nomeController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome do produto',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                ),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Por favor, insira o nome do produto.';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: precoController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Valor',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.monetization_on_outlined),
+                ),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Por favor, insira o valor do produto.';
+                  } else if (double.tryParse(value) == null) {
+                    return 'Por favor, insira apenas números.';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: quantidadeController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Quantidade',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.add_shopping_cart_outlined),
+                ),
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Por favor, insira a quantidade.';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.of(context).pop({
+                  'nome': nomeController.text,
+                  'preco': double.parse(precoController.text),
+                  'quantidade': int.parse(quantidadeController.text),
+                  'precoTotal': double.parse(precoController.text) * int.parse(quantidadeController.text),
+                });
+              }
+            },
+            child: const Text('Salvar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancelar'),
+          ),
+        ],
+      );
+    },
+  );
 }
