@@ -28,7 +28,7 @@ class ListaTarefasRepositorio extends ChangeNotifier {
 
   Future<int> addLista(ListaDeTarefas lista) async {
     db = await Banco.instance.database;
-    int resultado = await db.insert('lista', {
+    int resultado = await db.insert('listaTarefas', {
       'nome': lista.nome,
       'data': lista.data,
     });
@@ -39,7 +39,7 @@ class ListaTarefasRepositorio extends ChangeNotifier {
 
   Future<int> deleteLista(ListaDeTarefas lista) async{
     db = await Banco.instance.database;
-    int resultado = await db.delete('lista', where:'id=?', whereArgs: [lista.id]);
+    int resultado = await db.delete('listaTarefas', where:'id=?', whereArgs: [lista.id]);
 
     await _getLista();
     return resultado;
@@ -47,7 +47,7 @@ class ListaTarefasRepositorio extends ChangeNotifier {
 
   Future<int> editarLista(ListaDeTarefas lista) async{
     db = await Banco.instance.database;
-    int resultado = await db.update('lista', {
+    int resultado = await db.update('listaTarefas', {
       'nome' : lista.nome,
       'data' : lista.data
     }, where: 'id=?', whereArgs: [lista.id]);

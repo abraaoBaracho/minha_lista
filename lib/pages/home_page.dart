@@ -8,58 +8,60 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Minha Lista"),
+        title: const Text(
+          "Minha Lista",
+          style: TextStyle(color: Colors.white),
+        ),
         leading: const Icon(Icons.shopping_cart),
-        backgroundColor: Colors.deepOrange[300],
+        backgroundColor: const Color(0xFF2E7CDB),
       ),
       body: Stack(
         children: [
           Column(
+           
             children: [
-              ElevatedButton(
+              ElevatedButton.icon(
+                onPressed: () {
+                  mostrarDialogo(context);
+                },
+                icon: const Icon(Icons.format_list_bulleted_add),
+                label: const Text(
+                  "Nova Lista",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+                style: ButtonStyle(
+                  backgroundColor:
+                      MaterialStateProperty.all<Color>(const Color(0xFF74A3DB)),
+                ),
+              ),
+
+              ElevatedButton.icon(
                   onPressed: () {
-                    mostrarDialogo(context);
+                    Navigator.of(context).pushNamed(AppRoutes.LISTASALVAS);
                   },
-                  child: const Row(
-                    children: [
-                      Icon(Icons.format_list_bulleted_add),
-                      Text("Nova Lista"),
-                    ],
-                  )),
-              ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(AppRoutes.HISTORICO);
-                  },
-                  child: const Row(
-                    children: [Icon(Icons.history), Text("Historico")],
-                  )),
-              ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(AppRoutes.SOBRE);
-                  },
-                  child: const Row(
-                    children: [Icon(Icons.info), Text("Sobre")],
-                  )), /*
-                 ElevatedButton(
-                onPressed: (){
-                  Navigator.of(context).pushNamed(AppRoutes.CADASTRO);
-                }, 
-                child: const Row(
-                  children: [
-                    Icon(Icons.info),
-                    Text("cadastro")
-                  ],
-                )),
-                 ElevatedButton(
-                onPressed: (){
-                  Navigator.of(context).pushNamed(AppRoutes.LOGIN);
-                }, 
-                child: const Row(
-                  children: [
-                    Icon(Icons.info),
-                    Text("login")
-                  ],
-                )),*/
+                  icon: const Icon(Icons.save_sharp),
+                  label: const Text(
+                    "Listas salvas",
+                    style: TextStyle(color:Colors.white, fontSize: 18),
+                  ),
+                  style: ButtonStyle(
+                    backgroundColor:  MaterialStateProperty.all<Color>(const Color(0xFF74A3DB)),
+
+                  ),),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pushNamed(AppRoutes.SOBRE);
+                },
+                icon: const Icon(Icons.info),
+                label: const Text(
+                  "Sobre",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+                style: ButtonStyle(
+                  backgroundColor:
+                      MaterialStateProperty.all<Color>(const Color(0xFF74A3DB)),
+                ),
+              )
             ],
           )
         ],
@@ -68,7 +70,6 @@ class HomePage extends StatelessWidget {
   }
 
   void mostrarDialogo(BuildContext context) {
-
     showDialog(
         context: context,
         builder: ((BuildContext context) {

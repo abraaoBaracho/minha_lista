@@ -7,14 +7,13 @@ class Sobre extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-         title: const Text("Minha Lista"),
-        leading: IconButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.arrow_back)),
-        backgroundColor: Colors.deepOrange[300],
+      appBar:AppBar(
+        title: const Text(
+          "Minha Lista",
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: const Icon(Icons.shopping_cart),
+        backgroundColor: const Color(0xFF2E7CDB),
       ),
       body:  const Stack(
         children: [

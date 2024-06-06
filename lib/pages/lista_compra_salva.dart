@@ -7,84 +7,55 @@ import 'package:minha_lista/repositorio/lista_compras_repositorio.dart';
 import 'package:minha_lista/repositorio/produto_repositorio.dart';
 import 'package:provider/provider.dart';
 
-class ListaCompras extends StatefulWidget {
-  const ListaCompras({super.key});
+class ListaCompraSalva extends StatefulWidget {
+  const ListaCompraSalva({
+    super.key,
+  });
 
   @override
-  State<ListaCompras> createState() => _ListaComprasState();
+  State<ListaCompraSalva> createState() => _ListaCompraSalvaState();
 }
 
-class _ListaComprasState extends State<ListaCompras> {
+class _ListaCompraSalvaState extends State<ListaCompraSalva> {
   NumberFormat real = NumberFormat.currency(locale: 'pt_br', name: 'R\$');
   late String nome;
   late double preco;
   late int quant;
-  ListaDeCompras listaCompras = ListaDeCompras(nome: 'Lista', data: '');
-  bool estaSalva = false;
 
   @override
   Widget build(BuildContext context) {
-     final produtoRepositorio = context.read<ProdutoRepositorio>();
+    final produtoRepositorio = context.read<ProdutoRepositorio>();
+    ListaDeCompras? listaDeCompras =
+        ModalRoute.of(context)!.settings.arguments as ListaDeCompras;
+    listaDeCompras.calcularPrecoTotal();
     return Scaffold(
       appBar: AppBar(
-          title: Text(listaCompras.nome, style: const TextStyle(color: Colors.white)),
+          title: Text(listaDeCompras.nome,  style: const TextStyle(color: Colors.white),),
           backgroundColor: const Color(0xFF2E7CDB),
           actions: <Widget>[
             Visibility(
-              visible: listaCompras.compras.isNotEmpty,
+              visible: listaDeCompras.compras.isNotEmpty,
               child: IconButton(
                   onPressed: () async {
-                    bool salvar;
+                    bool limparLista = await deletarItens(listaDeCompras);
 
-                      if (!estaSalva) {
-                        var nomeLista = await addNome(context);
-                        DateTime data = DateTime.now();
-
-                        setState(() {
-                          if (nomeLista != null) {
-                            listaCompras.nome = nomeLista;
-                          }
-
-                          listaCompras.data =
-                              '${data.day}/${data.month}/${data.year}';
-                        });
-
-                        salvar = await salvarBanco(listaCompras);
-                        estaSalva = salvar;
-                        
-                      } else {
-                        var nomeLista = await addNome(context);
-                        DateTime data = DateTime.now();
-
-                        setState(() {
-                          if (nomeLista != null) {
-                            listaCompras.nome = nomeLista;
-                          }
-
-                          listaCompras.data =
-                              '${data.day}/${data.month}/${data.year}';
-                        });
-
-                        salvar = await editaBanco(listaCompras);
-                      }
-
-                    if (salvar) {
+                    if (limparLista) {
                       const snackBar = SnackBar(
-                        content: Text('Dados salvos com sucesso!'),
+                        content: Text('Lista limpa!'),
                         duration: Durations.long4,
                       );
                       // ignore: use_build_context_synchronously
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     } else {
                       const snackBar = SnackBar(
-                        content: Text('Os dados não foram salvos'),
+                        content: Text('Não foi possivel limpar a lista'),
                         duration: Durations.long4,
                       );
                       // ignore: use_build_context_synchronously
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     }
                   },
-                  icon: const Icon(Icons.save)),
+                  icon: const Icon(Icons.delete_sweep_rounded)),
             )
           ]),
       body: Column(
@@ -98,9 +69,8 @@ class _ListaComprasState extends State<ListaCompras> {
                   DataColumn(label: Text('Preço')),
                   DataColumn(label: Text('Quant')),
                   DataColumn(label: Text('Preço total')),
-                  
                 ],
-                rows: listaCompras.compras.map((item) {
+                rows: listaDeCompras.compras.map((item) {
                   return DataRow(cells: [
                     DataCell(Text(item.nome)),
                     DataCell(Text(real.format(item.preco))),
@@ -108,22 +78,13 @@ class _ListaComprasState extends State<ListaCompras> {
                     DataCell(
                       Text(real.format(item.precoTotal)),
                     ),
-                  ],
-                  onLongPress: () async{
-                    int? escolha = await mostarOpcoes(item);
-
-                    if (escolha == 1 ) {
-                      // ignore: use_build_context_synchronously
-                      Produto? produto = await editarItem(context, item);
-                      listaCompras.compras.add(produto!);
-                    }else if(escolha == 2){
-                      deletaItem(item);
-                    }
-                  },);
+                  ]);
                 }).toList(),
               ),
             ),
-            Expanded(child: Text('Valor Total:${real.format(listaCompras.precoLista)}'))
+            Expanded(
+                child: Text(
+                    'Valor Total: ${real.format(listaDeCompras.precoLista)}'))
           ]),
       floatingActionButton: FloatingActionButton(
           tooltip: 'Adicionar Produto',
@@ -136,91 +97,41 @@ class _ListaComprasState extends State<ListaCompras> {
                 quant = resultado['quantidade'];
                 Produto p = Produto(nome: nome, preco: preco, quant: quant);
                 p.calcularTotal();
-                
-                if (estaSalva) {
-                  produtoRepositorio.addProduto(p, listaCompras.id);
-                   listaCompras.addProduto(p);
-                }else{
-                   listaCompras.addProduto(p);
-                }
-               
+
+                produtoRepositorio.addProduto(p, listaDeCompras.id);
+                listaDeCompras.addProduto(p);
               });
             }
           },
           backgroundColor: const Color(0xFF74A3DB),
-          child: const Icon(Icons.add),),
+          child: const Icon(Icons.add)),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
-  Future<bool> salvarBanco(ListaDeCompras lista) async {
-    final listaComprasRepositorio = context.read<ListaComprasRepositorio>();
-    final produtoRepositorio = context.read<ProdutoRepositorio>();
-    int resultado = await listaComprasRepositorio.addLista(lista);
-
-     if (resultado > 0) {
-
-     listaCompras = listaComprasRepositorio.lista.last;
-      for (var element in lista.compras) {
-        
-       resultado = await produtoRepositorio.addProduto(element, listaCompras.id);
-      }
-      listaCompras.compras = await produtoRepositorio.getProdutos(listaCompras.id);
-    }
-
-    if (resultado > 0) {
-      return true;
-    }
-    return false;
-  }
-
   Future<bool> editaBanco(ListaDeCompras lista) async {
     final listaComprasRepositorio = context.read<ListaComprasRepositorio>();
-   
 
     int resultado = await listaComprasRepositorio.editarLista(lista);
 
-
     if (resultado > 0) {
       return true;
     }
     return false;
   }
-  
-  Future<int?> mostarOpcoes(Produto produto) {
-    int escola;
-    return showDialog<int>(
-        context: context,
-        builder: ((BuildContext context) {
-          return SimpleDialog(
-              title: const Text('Escolha uma opção'),
-              children: <Widget>[
-                SimpleDialogOption(
-                  onPressed: () {
-                    escola = 1;
-                   Navigator.of(context).pop(escola);
-                  },
-                  child: const Text('Editar'),
-                ),
-                SimpleDialogOption(
-                  onPressed: () {
-                    escola = 2;
-                   Navigator.of(context).pop(escola);
-                  },
-                  child: const Text('Deletar'),
-                ),
-                SimpleDialogOption(
-                  onPressed: (){
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancelar'),
-                )
-              ]);
-        }));
-  }
-  
-  void deletaItem(Produto produto) async {
-    
+
+  Future<bool> deletarItens(ListaDeCompras lista) async {
+    final produtoRepositorio = context.read<ProdutoRepositorio>();
+    List<Produto> aux = lista.compras;
+
+    for (var produto in aux) {
+      produtoRepositorio.deleteProduto(produto);
+      lista.compras.remove(produto);
+    }
+    if (lista.compras.isEmpty) {
+      return true;
+    }
+    return false;
   }
 }
 
@@ -358,11 +269,9 @@ Future<String?> addNome(BuildContext context) {
   );
 }
 
-Future<Produto?> editarItem(
-    BuildContext context, Produto item) {
+Future<Produto?> editarItem(BuildContext context, Produto item) {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  TextEditingController nomeController =
-      TextEditingController(text: item.nome);
+  TextEditingController nomeController = TextEditingController(text: item.nome);
   TextEditingController precoController =
       TextEditingController(text: item.preco.toString());
   TextEditingController quantidadeController =

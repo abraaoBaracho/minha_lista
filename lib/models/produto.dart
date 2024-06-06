@@ -6,12 +6,12 @@ class Produto {
   double precoTotal;
 
   Produto({
+    this.id = 0,
     required this.nome,
     required this.preco,
     required this.quant,
-    this.precoTotal = 0,
-    this.id =0
-  });
+    double? precoTotal,
+  }) : precoTotal = precoTotal ?? preco * quant;
 
   void calcularTotal() {
     precoTotal = preco * quant;
@@ -24,10 +24,21 @@ class Produto {
 
   factory Produto.fromMap(Map<String, dynamic> map) {
     return Produto(
-      id: map['id'],
-      nome: map['nome'],
-      preco: map['preco'],
-      quant: map['quant'],
+      id: map['id'] ?? 0,
+      nome: map['nome'] ?? '',
+      preco: map['valor']?.toDouble() ?? 0.0,
+      quant: map['quantidade'] ?? 0,
+      precoTotal: (map['valor']?.toDouble() ?? 0.0) * (map['quantidade'] ?? 0),
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nome': nome,
+      'valor': preco,
+      'quantidade': quant,
+      'precoTotal': precoTotal,
+    };
   }
 }

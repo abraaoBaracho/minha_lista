@@ -1,23 +1,27 @@
 
+import 'package:minha_lista/models/tarefa.dart';
+
 class ListaDeTarefas {
   
   int id;
   String nome;
   String data;
-  List<String> tarefas = [];
+  List<Tarefa> tarefas = [];
   bool sort = false;
+
  
 
   ListaDeTarefas({required this.nome, required this.data, this.id = 0});
 
-  void addTarefa(String tarefa){
+  void addTarefa(Tarefa tarefa){
     tarefas.add(tarefa);
 
     }
 
+
   void tarefasSort(){
     if (!sort) {
-      tarefas.sort((a, b) => a.compareTo(b));
+      tarefas.sort((a, b) => a.nome.compareTo(b.nome));
       sort = true;
     } else {
       tarefas = tarefas.reversed.toList();

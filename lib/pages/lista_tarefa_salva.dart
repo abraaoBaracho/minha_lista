@@ -5,22 +5,24 @@ import 'package:minha_lista/repositorio/tarefas_repositrio.dart';
 import 'package:provider/provider.dart';
 import '../models/lista_tarefas.dart';
 
-class ListaTarefa extends StatefulWidget {
-  const ListaTarefa({super.key});
+class ListaTarefaSalva extends StatefulWidget {
+  const ListaTarefaSalva({
+    super.key,
+  });
 
   @override
-  State<ListaTarefa> createState() => _ListaTarefaState();
+  State<ListaTarefaSalva> createState() => _ListaTarefaSalvaState();
 }
 
-class _ListaTarefaState extends State<ListaTarefa> {
+class _ListaTarefaSalvaState extends State<ListaTarefaSalva> {
   late String tarefa;
-  ListaDeTarefas listaDeTarefas = ListaDeTarefas(nome: 'Lista', data: '');
-  bool estaSalva = false;
   List<Tarefa> deletadas = [];
 
   @override
   Widget build(BuildContext context) {
-    
+    final tarefaRepositorio = context.read<TarefaRepositorio>();
+    ListaDeTarefas? listaDeTarefas =
+        ModalRoute.of(context)!.settings.arguments as ListaDeTarefas;
     return Scaffold(
       appBar: AppBar(
           title: Text(listaDeTarefas.nome,
@@ -31,40 +33,21 @@ class _ListaTarefaState extends State<ListaTarefa> {
                 visible: listaDeTarefas.tarefas.isNotEmpty,
                 child: IconButton(
                     onPressed: () async {
-                      bool salvar;
+                       bool salvar;
+                      var nomeLista =
+                          await addNome(context, listaDeTarefas.nome);
+                      DateTime data = DateTime.now();
 
-                      if (!estaSalva) {
-                        var nomeLista =
-                            await addNome(context, listaDeTarefas.nome);
-                        DateTime data = DateTime.now();
+                      setState(() {
+                        if (nomeLista != null) {
+                          listaDeTarefas.nome = nomeLista;
+                        }
 
-                        setState(() {
-                          if (nomeLista != null) {
-                            listaDeTarefas.nome = nomeLista;
-                          }
+                        listaDeTarefas.data =
+                            '${data.day}/${data.month}/${data.year}';
+                      });
 
-                          listaDeTarefas.data =
-                              '${data.day}/${data.month}/${data.year}';
-                        });
-
-                        salvar = await salvarBanco(listaDeTarefas);
-                        estaSalva = salvar;
-                      } else {
-                        var nomeLista =
-                            await addNome(context, listaDeTarefas.nome);
-                        DateTime data = DateTime.now();
-
-                        setState(() {
-                          if (nomeLista != null) {
-                            listaDeTarefas.nome = nomeLista;
-                          }
-
-                          listaDeTarefas.data =
-                              '${data.day}/${data.month}/${data.year}';
-                        });
-
-                        salvar = await editarBanco(listaDeTarefas);
-                      }
+                      salvar = await editarBanco(listaDeTarefas);
 
                       if (salvar) {
                         const snackBar = SnackBar(
@@ -156,12 +139,8 @@ class _ListaTarefaState extends State<ListaTarefa> {
                               IconButton(
                                 onPressed: () {
                                   setState(() {
-                                    if (estaSalva) {
-                                      deletadas.add(linha);
+                                   deletadas.add(linha);
                                       listaDeTarefas.tarefas.remove(linha);
-                                    } else {
-                                      listaDeTarefas.tarefas.remove(linha);
-                                    }
                                   });
                                   const snackBar = SnackBar(
                                     content: Text('A tarefa foi removida'),
@@ -190,7 +169,7 @@ class _ListaTarefaState extends State<ListaTarefa> {
             if (texto != null) {
               setState(() {
                 Tarefa tarefa = Tarefa(nome: texto);
-
+                tarefaRepositorio.addTarefa(tarefa, listaDeTarefas.id);
                 listaDeTarefas.addTarefa(tarefa);
               });
             }
@@ -201,29 +180,7 @@ class _ListaTarefaState extends State<ListaTarefa> {
     );
   }
 
-  Future<bool> salvarBanco(ListaDeTarefas lista) async {
-    final listaTarefaRepositorio = context.read<ListaTarefasRepositorio>();
-    final tarefaRepositorio = context.read<TarefaRepositorio>();
-
-    int resultado = await listaTarefaRepositorio.addLista(lista);
-
-    if (resultado > 0) {
-      listaDeTarefas = listaTarefaRepositorio.lista.last;
-      for (var element in lista.tarefas) {
-        resultado =
-            await tarefaRepositorio.addTarefa(element, listaDeTarefas.id);
-      }
-      listaDeTarefas.tarefas =
-          await tarefaRepositorio.getTarefas(listaDeTarefas.id);
-    }
-
-    if (resultado > 0) {
-      return true;
-    }
-    return false;
-  }
-
-  Future<bool> editarBanco(ListaDeTarefas lista) async {
+   Future<bool> editarBanco(ListaDeTarefas lista) async {
     final listaTarefaRepositorio = context.read<ListaTarefasRepositorio>();
     final tarefaRepositorio = context.read<TarefaRepositorio>();
 
@@ -232,7 +189,7 @@ class _ListaTarefaState extends State<ListaTarefa> {
     for (var element in lista.tarefas) {
       if (element.id == 0) {
         resultado =
-            await tarefaRepositorio.addTarefa(element, listaDeTarefas.id);
+            await tarefaRepositorio.addTarefa(element, lista.id);
       } else {
         resultado = await tarefaRepositorio.editarTarefa(element);
       }
